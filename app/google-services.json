@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "165845932436",
+    "firebase_url": "https://taxifinderexam.firebaseio.com",
+    "project_id": "taxifinderexam",
+    "storage_bucket": "taxifinderexam.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165845932436:android:2871c454a86ec48a",
+        "android_client_info": {
+          "package_name": "com.example.taxifinder"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "165845932436-2rls5o67f94cm8ra18b9reqqcha8nrk1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.taxifinder",
+            "certificate_hash": "4dc8c8d034bd07a9d2989b3370152906ad14b24e"
+          }
+        },
+        {
+          "client_id": "165845932436-blk9sbg61ktc9gu90luhcj3kkfds3g89.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0o6QCuQz5cO-G-gLlMN0pg49KoFhUKNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "165845932436-blk9sbg61ktc9gu90luhcj3kkfds3g89.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

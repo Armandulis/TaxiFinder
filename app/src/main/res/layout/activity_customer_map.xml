@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:map="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_height="match_parent"
+android:layout_width="match_parent"
+tools:context=".CustomerMapActivity">
+
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="clip_vertical"
+        android:onClick="tryLogOut"
+        android:text="@string/log_out" />
+    <Button
+        android:id="@+id/btnProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:onClick="openProfile"
+        android:text="@string/profile"
+        android:layout_alignParentRight="true"/>
+
+
+
+
+    <fragment
+        android:id="@+id/map1"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
+
+
+
+    <LinearLayout
+        android:gravity="bottom"
+        android:orientation="vertical"
+        android:id="@+id/layoutBottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/common_google_signin_btn_text_dark_default">
+            <LinearLayout
+                android:id="@+id/driversLayoutProfile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="@android:color/darker_gray"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/imageDriverPicDetails"
+                    android:layout_width="100sp"
+                    android:layout_height="150sp"
+                    tools:src="@mipmap/ic_customer_foreground"
+                    android:padding="20dp"/>
+
+                <android.support.constraint.ConstraintLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/darker_gray">
+
+                    <TextView
+                        android:id="@+id/tvDriverDetailsName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:padding="20dp"
+                        map:layout_constraintStart_toStartOf="parent"
+                        map:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvDriverDetailsPhone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignTop="@id/tvCustomerDetailsName"
+                        android:layout_marginTop="8dp"
+                        android:layout_toStartOf="@id/tvCustomerDetailsName"
+                        map:layout_constraintEnd_toEndOf="@+id/tvDriverDetailsName"
+                        map:layout_constraintStart_toStartOf="@+id/tvDriverDetailsName"
+                        map:layout_constraintTop_toBottomOf="@+id/tvDriverDetailsName" />
+
+                </android.support.constraint.ConstraintLayout>
+
+    </LinearLayout>
+
+        <fragment
+            android:id="@+id/place_autocomplete_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            />
+
+        <RadioGroup
+            android:id="@+id/radioGroupServiceTypeCustomer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:textAlignment="center">
+
+        <RadioButton
+                android:id="@+id/radioButtonTaxiCustomer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Taxi" />
+
+            <RadioButton
+                android:id="@+id/radioButtonUberCustomer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Uber" />
+
+            <RadioButton
+                android:id="@+id/radioButtonPickUpTruckCustomer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pick up truck"/>
+            </RadioGroup>
+        <Button
+            android:id="@+id/btnPickUp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:onClick="buttonRequestOrCancel"
+            android:text="@string/pick_me_up" />
+    </LinearLayout>
+
+
+
+
+</FrameLayout>
+

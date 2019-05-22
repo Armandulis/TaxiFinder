@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">TaxiFinder</string>
+    <string name="driver">Driver</string>
+    <string name="customer">Customer</string>
+    <string name="welcome_drivers">Hi there! Log in to see drivers content or register to be one.</string>
+    <string name="welcome_customers">Hi there! Log in to see customers content or register to be one.</string>
+    <string name="register">Register</string>
+    <string name="login">Log in</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="chooser">I am ..</string>
+    <string name="title_activity_drivers_map">Map</string>
+    <string name="log_out">Logout</string>
+    <string name="title_activity_customer_map">Map</string>
+    <string name="pick_me_up">Pick Me Up!</string>
+    <string name="waitting_for_pickup">Waitting for Pick Up</string>
+    <string name="profile">Profile</string>
+    <string name="phone_number">Phone number</string>
+    <string name="name">Name</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
+    <string name="hint_car">Car type</string>
+</resources>
