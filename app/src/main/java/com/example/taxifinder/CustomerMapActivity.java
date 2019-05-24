@@ -232,30 +232,32 @@ public class CustomerMapActivity extends FragmentActivity
         //database creates reference as customerpickup in database
 
         if (isRequested){
+            isDriverFound = false;
             isRequested = false;
             driversDetailsLayout.setVisibility(View.GONE);
             geoQuery.removeAllListeners();
             driversLocationRef.removeEventListener(driverLocationRefListener);
 
             if (driversID != null){
-                DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
-                driverRef.removeValue();
+                DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
+
+                customerRef.removeValue();
                 driversID = null;
+                Log.d("RemoveValue", "buttonRequestOrCancel: remove value from customers request");
             }
             if (pickupMarker != null){
                 pickupMarker.remove();
             }
-            isDriverFound = false;
+
             searchRadius = 1;
             String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-
             DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
             GeoFire geoFire = new GeoFire(dbRef);
             geoFire.removeLocation(userID);
+            mPickUpButton.setText("Ca");
 
         } else {
-
+            Log.d("RemoveValue", "buttonRequestOrCancel: Wil it do it again?");
             RadioButton serviceButton = findViewById(radioGroupServiceType.getCheckedRadioButtonId());
             if (serviceButton != null){
                 requestService = serviceButton.getText().toString();
@@ -304,33 +306,37 @@ public class CustomerMapActivity extends FragmentActivity
             public void onKeyEntered(String key, GeoLocation location) {
                 Log.d("Pick Up", "before isDriverFound: " + 123);
                 //check if driver is not found
-                if (!isDriverFound) {
+                if (!isDriverFound && isRequested) {
 
 
-                    DatabaseReference customerDatabaseRef = FirebaseDatabase.getInstance().getReference().child("Users").child(driversID);
-                    customerDatabaseRef.addValueEventListener(new ValueEventListener() {
+                    DatabaseReference customerDatabaseRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(key);
+                    ValueEventListener listener = customerDatabaseRef.addValueEventListener(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                             if (dataSnapshot.exists() && dataSnapshot.getChildrenCount() > 0){
-                                if (isDriverFound){
+                                if (isDriverFound && isRequested) {
                                     return;
                                 }
-                                Map<String, Object> driverMap = (Map<String, Object>) dataSnapshot.getValue();
-                                if (driverMap.get("service") != null && driverMap.get("service").equals(requestService)) {
-                                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
-                                    String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                                    isDriverFound = true;
-                                    driversID = dataSnapshot.getKey();
-                                    HashMap map = new HashMap();
-                                    map.put("customerRideId", customerID);
-                                    map.put("destination", customersDestination);
-                                    map.put("destinationLat", destinationLatLog.latitude);
-                                    map.put("destinationLng", destinationLatLog.longitude );
-                                    driverRef.updateChildren(map);
-                                    getDriversLocation();
-                                    getDriversDetails();
-                                }
+                                    Map<String, Object> driverMap = (Map<String, Object>) dataSnapshot.getValue();
+                                    if (driverMap.get("service") != null && driverMap.get("service").equals(requestService)) {
+                                        isDriverFound = true;
+                                        driversID = dataSnapshot.getKey();
+                                        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
+                                        String customerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                                        HashMap map = new HashMap();
+                                        map.put("customerRideId", customerID);
+                                        map.put("destination", customersDestination);
+                                        map.put("destinationLat", destinationLatLog.latitude);
+                                        map.put("destinationLng", destinationLatLog.longitude );
+                                        driverRef.updateChildren(map);
+                                        getDriversLocation();
+                                        getDriversDetails();
+
+                                    }
+
+
                             }
                         }
 
@@ -339,10 +345,6 @@ public class CustomerMapActivity extends FragmentActivity
 
                         }
                     });
-
-                    //Getting Driver for customer, Creates child in database under 'Drivers' for driver to find what customer he needs to pick up (customerID)
-
-
                     
                 }
 
@@ -374,8 +376,6 @@ public class CustomerMapActivity extends FragmentActivity
                 Log.d("Pick Up", "error isDriverFound: " + 123);
             }
         });
-
-
     }
 
     private void getDriversDetails() {
@@ -400,6 +400,7 @@ public class CustomerMapActivity extends FragmentActivity
                     }
 
                     driversDetailsLayout.setVisibility(View.VISIBLE);
+
                 }
             }
 

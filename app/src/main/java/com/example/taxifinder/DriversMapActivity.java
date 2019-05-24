@@ -117,8 +117,7 @@ public class DriversMapActivity extends FragmentActivity
                 if (dataSnapshot.exists()){
                     // lets Driver know if there is someone to pick up
                     customersID = dataSnapshot.getValue().toString();
-                    Log.d("drivers logic", "customers id work? " + customersID +" it does !");
-                        getAssignedCustomerPickUpLocation();
+                    getAssignedCustomerPickUpLocation();
                     getAssignedCustomerDetails();
                     getAssignedCustomerDestination();
 
@@ -225,9 +224,16 @@ public class DriversMapActivity extends FragmentActivity
                     LatLng pickupLatLng  = new LatLng(locationLat, locationLng);
                     mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pick up Location"));
 
-                    getRouteToCustomer(pickupLatLng);
-                    
 
+
+                    getRouteToCustomer(pickupLatLng);
+
+                    DatabaseReference deleteRequest = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customersID);
+                    deleteRequest.removeValue();
+
+                } else {
+                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(customersID).child("customerRequest");
+                    driverRef.removeValue();
                 }
             }
 
