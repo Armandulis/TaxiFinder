@@ -110,16 +110,15 @@ public class DriversMapActivity extends FragmentActivity
     }
 
     private void getAssignedCustomer() {
-        Log.d("drivers logic", "customers id work? " + 9874613);
         String driversID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest").child("customerRideId");
-        Log.d("drivers logic", "customers id work? " + 123);
 
         customerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
                     // lets Driver know if there is someone to pick up
+                    status = 1;
                     customersID = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickUpLocation();
                     getAssignedCustomerDetails();
@@ -232,25 +231,24 @@ public class DriversMapActivity extends FragmentActivity
                     }
 
                     pickupLatLng  = new LatLng(locationLat, locationLng);
-                    mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pick up Location"));
+
+                    pickupMarker = mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pick up Location"));
 
 
 
                     getRouteToCustomer(pickupLatLng);
 
-                    DatabaseReference deleteRequest = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customersID);
-                    deleteRequest.removeValue();
+                  //  DatabaseReference deleteRequest = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customersID);
+                   // deleteRequest.removeValue();
 
-                } else {
-                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(customersID).child("customerRequest");
-                    driverRef.removeValue();
-                }
+                }// else {
+                 //   DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(customersID).child("customerRequest");
+                 //   driverRef.removeValue();
+               // }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                Log.d("Driver gott cancelled?", "onCancelled: wow");
             }
         });
     }
@@ -259,6 +257,7 @@ public class DriversMapActivity extends FragmentActivity
         Routing routing = new Routing.Builder()
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
+                .key("AIzaSyDb3jkSprTI-b0DLIu68F5XLuxPpNI3YY4")
                 .alternativeRoutes(true)
                 .waypoints(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), pickupLatLng)
                 .build();
@@ -354,10 +353,6 @@ public class DriversMapActivity extends FragmentActivity
         }
     }
 
-    private void connectDriver(){
-
-    }
-
     private void disconnectDriver(){
         String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("driversAvailable");
@@ -369,7 +364,7 @@ public class DriversMapActivity extends FragmentActivity
             isLoggingOut = true;
 
 
-        mFusedLocationProvider.removeLocationUpdates(mLocationCallback);
+          mFusedLocationProvider.removeLocationUpdates(mLocationCallback);
             disconnectDriver();
         if (customerPickUpLocationRefListener != null){
             customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
@@ -390,7 +385,10 @@ public class DriversMapActivity extends FragmentActivity
 
     @Override
     public void onRoutingFailure(RouteException e) {
-        if (e != null) Toast.makeText(this, "Error: " + e, Toast.LENGTH_SHORT).show();
+        if (e != null) {
+            Toast.makeText(this, "Error: " + e, Toast.LENGTH_SHORT).show();
+            Log.d("errorRoute", "onRoutingFailure: " + e);
+        }
         else   Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
     }
 
@@ -401,6 +399,11 @@ public class DriversMapActivity extends FragmentActivity
 
     @Override
     public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteID) {
+        if(polylines.size()>0) {
+            for (Polyline poly : polylines) {
+                poly.remove();
+            }
+        }
         //add route(s) to the map.
         for (int i = 0; i <route.size(); i++) {
 
@@ -443,10 +446,16 @@ public class DriversMapActivity extends FragmentActivity
         DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("customerRequest");
         driverRef.removeValue();
 
+        if (customerPickUpLocationRefListener != null){
+            customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
+        }
+
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
         GeoFire geoFire = new GeoFire(dbRef);
         geoFire.removeLocation(customersID);
         customersID = "";
+
+        customersDetailsLayout.setVisibility(View.GONE);
 
         if (pickupMarker != null){
             pickupMarker.remove();
