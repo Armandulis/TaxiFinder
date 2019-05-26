@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "165845932436-k1tmql24qrt6nv1m53h4ded5tik94se9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.taxifinder",
+            "certificate_hash": "308105566b45f736bc6010032fec4b3b88ce3003"
+          }
+        },
+        {
           "client_id": "165845932436-2rls5o67f94cm8ra18b9reqqcha8nrk1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

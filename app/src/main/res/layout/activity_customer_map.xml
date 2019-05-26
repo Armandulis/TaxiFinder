@@ -23,7 +23,12 @@ tools:context=".CustomerMapActivity">
         android:onClick="openProfile"
         android:text="@string/profile"
         android:layout_alignParentRight="true"/>
-
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="openHistory"
+        android:text="History"/>
 
 
 
@@ -59,8 +64,6 @@ tools:context=".CustomerMapActivity">
                     android:layout_height="150sp"
                     tools:src="@mipmap/ic_customer_foreground"
                     android:padding="20dp"/>
-
-                <android.support.constraint.ConstraintLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@android:color/darker_gray">
@@ -85,8 +88,13 @@ tools:context=".CustomerMapActivity">
                         map:layout_constraintEnd_toEndOf="@+id/tvDriverDetailsName"
                         map:layout_constraintStart_toStartOf="@+id/tvDriverDetailsName"
                         map:layout_constraintTop_toBottomOf="@+id/tvDriverDetailsName" />
-
-                </android.support.constraint.ConstraintLayout>
+                    <RatingBar
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/ratingBar"
+                        android:layout_gravity="center"
+                        android:numStars="5"
+                        android:stepSize="0.1"/>
 
     </LinearLayout>
 

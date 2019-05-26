@@ -1,6 +1,7 @@
 package com.example.taxifinder;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Camera;
@@ -68,11 +69,13 @@ public class DriversMapActivity extends FragmentActivity
 
     private FusedLocationProviderClient mFusedLocationProvider;
 
-    private String customersID = "";
+    private String customersID = "", destination;
+    private LatLng destinationLatLng, pickupLatLng;
+    private int status = 0;
     private boolean isLoggingOut = false;
 
     private LinearLayout customersDetailsLayout;
-    private TextView textCustomerDetailsName, textCustomerDetailsPhone, textCustomerDetailsDestination;
+    private TextView textCustomerDetailsName, textCustomerDetailsPhone,textRideStatus, textCustomerDetailsDestination;
     private ImageView imageCustomerssPic;
 
     private List<Polyline> polylines;
@@ -90,6 +93,7 @@ public class DriversMapActivity extends FragmentActivity
         textCustomerDetailsDestination = findViewById(R.id.tvCustomerDetailsDestination);
         customersDetailsLayout = findViewById(R.id.customersLayoutProfile);
         imageCustomerssPic = findViewById(R.id.imageCustomerPicDetails);
+        textRideStatus = findViewById(R.id.rideStatus);
 
 
         mFusedLocationProvider = LocationServices.getFusedLocationProviderClient(this);
@@ -122,16 +126,8 @@ public class DriversMapActivity extends FragmentActivity
                     getAssignedCustomerDestination();
 
                 } else {
-                    customersDetailsLayout.setVisibility(View.GONE);
-                    customersID = "";
-                    deletePolylines();
-                    if (pickupMarker != null){
-                        pickupMarker.remove();
-                    }
-                    if (customerPickUpLocationRefListener != null){
-                        customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
 
-                    }
+                    endRide();
                 }
             }
 
@@ -144,17 +140,31 @@ public class DriversMapActivity extends FragmentActivity
 
     private void getAssignedCustomerDestination() {
         String driversID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest").child("destination");
+        DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
 
         customerRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()){
+                if (dataSnapshot.exists()) {
+                    Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
                     // lets Driver know if there is someone to pick up
-                    String  customersDestination = dataSnapshot.getValue().toString();
-                        textCustomerDetailsDestination.setText("Destination: " + customersDestination);
-                } else {
-                    textCustomerDetailsDestination.setText("Did not set wanted destnation ");
+                    if(map.get("destination")!=null){
+                        destination = map.get("destination").toString();
+                        textCustomerDetailsDestination.setText("Destination " + destination);
+                    }
+                    else {
+                        textCustomerDetailsDestination.setText("Destination: --");
+                    }
+
+                    Double destinationLat = 0.0;
+                    Double destinationLng = 0.0;
+                    if(map.get("destinationLat") != null){
+                        destinationLat = Double.valueOf(map.get("destinationLat").toString());
+                    }
+                    if(map.get("destinationLng") != null){
+                        destinationLng = Double.valueOf(map.get("destinationLng").toString());
+                        destinationLatLng = new LatLng(destinationLat, destinationLng);
+                    }
                 }
             }
 
@@ -221,7 +231,7 @@ public class DriversMapActivity extends FragmentActivity
                         locationLng = Double.parseDouble(map.get(1).toString());
                     }
 
-                    LatLng pickupLatLng  = new LatLng(locationLat, locationLng);
+                    pickupLatLng  = new LatLng(locationLat, locationLng);
                     mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pick up Location"));
 
 
@@ -247,7 +257,6 @@ public class DriversMapActivity extends FragmentActivity
 
     private void getRouteToCustomer(LatLng pickupLatLng) {
         Routing routing = new Routing.Builder()
-                .key("AIzaSyDb3jkSprTI-b0DLIu68F5XLuxPpNI3YY4")
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
                 .alternativeRoutes(true)
@@ -266,6 +275,7 @@ public class DriversMapActivity extends FragmentActivity
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -283,6 +293,9 @@ public class DriversMapActivity extends FragmentActivity
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, ValuesHelper.PERMISSION_REQUEST_CODE);
             }
         }
+
+        mMap.setMyLocationEnabled(true);
+        mFusedLocationProvider.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
     }
 
     LocationCallback mLocationCallback = new LocationCallback(){
@@ -403,6 +416,68 @@ public class DriversMapActivity extends FragmentActivity
 
             Toast.makeText(getApplicationContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void switchStatus(View view){
+        switch(status) {
+            case 1:
+                status = 2;
+                deletePolylines();
+                if (destinationLatLng.latitude != 0.0 && destinationLatLng.longitude != 0.0) {
+                    getRouteToCustomer(destinationLatLng);
+                }
+                textRideStatus.setText("ride completed");
+                break;
+            case 2:
+                recordRide();
+                endRide();
+                break;
+        }
+    }
+
+    private void endRide(){
+        textRideStatus.setText("customer picked up");
+        deletePolylines();
+
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("customerRequest");
+        driverRef.removeValue();
+
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
+        GeoFire geoFire = new GeoFire(dbRef);
+        geoFire.removeLocation(customersID);
+        customersID = "";
+
+        if (pickupMarker != null){
+            pickupMarker.remove();
+        }
+    }
+
+    private void recordRide(){
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("history");
+        DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(customersID).child("history");
+        DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference().child("history");
+        String requestId = historyRef.push().getKey();
+        driverRef.child(requestId).setValue(true);
+        customerRef.child(requestId).setValue(true);
+
+        HashMap map = new HashMap();
+        map.put("driver", userId);
+        map.put("customer", customersID);
+        map.put("rating", 0);
+        map.put("timestamp", getCurrentTimestamp());
+        map.put("destination", destination);
+        map.put("location/from/lat", pickupLatLng.latitude);
+        map.put("location/from/lng", pickupLatLng.longitude);
+        map.put("location/to/lat", destinationLatLng.latitude);
+        map.put("location/to/lng", destinationLatLng.longitude);
+        historyRef.child(requestId).updateChildren(map);
+}
+
+    private Long getCurrentTimestamp() {
+        Long timestamp = System.currentTimeMillis()/1000;
+        return timestamp;
     }
 
     @Override

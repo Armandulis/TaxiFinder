@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,8 +87,8 @@ public class CustomerMapActivity extends FragmentActivity
     private ImageView imageDriverPic;
     private RadioGroup radioGroupServiceType;
     private String requestService;
-
     private String customersDestination;
+    private RatingBar mRatingBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,9 +105,9 @@ public class CustomerMapActivity extends FragmentActivity
         textDriverDetailsPhone = findViewById(R.id.tvDriverDetailsPhone);
         driversDetailsLayout = findViewById(R.id.driversLayoutProfile);
         imageDriverPic = findViewById(R.id.imageDriverPicDetails);
+        mRatingBar = findViewById(R.id.ratingBar);
 
         radioGroupServiceType = findViewById(R.id.radioGroupServiceTypeCustomer);
-
         radioGroupServiceType.check(R.id.radioButtonTaxiCustomer);
 
 
@@ -232,29 +233,7 @@ public class CustomerMapActivity extends FragmentActivity
         //database creates reference as customerpickup in database
 
         if (isRequested){
-            isDriverFound = false;
-            isRequested = false;
-            driversDetailsLayout.setVisibility(View.GONE);
-            geoQuery.removeAllListeners();
-            driversLocationRef.removeEventListener(driverLocationRefListener);
-
-            if (driversID != null){
-                DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
-
-                customerRef.removeValue();
-                driversID = null;
-                Log.d("RemoveValue", "buttonRequestOrCancel: remove value from customers request");
-            }
-            if (pickupMarker != null){
-                pickupMarker.remove();
-            }
-
-            searchRadius = 1;
-            String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
-            GeoFire geoFire = new GeoFire(dbRef);
-            geoFire.removeLocation(userID);
-            mPickUpButton.setText("Ca");
+            endRide();
 
         } else {
             Log.d("RemoveValue", "buttonRequestOrCancel: Wil it do it again?");
@@ -333,6 +312,7 @@ public class CustomerMapActivity extends FragmentActivity
                                         driverRef.updateChildren(map);
                                         getDriversLocation();
                                         getDriversDetails();
+                                        getHasRideEnded();
 
                                     }
 
@@ -392,11 +372,22 @@ public class CustomerMapActivity extends FragmentActivity
                     if (map.get("phone") != null) {
                         textDriverDetailsPhone.setText( map.get("phone").toString());
                     }
-
                     if (map.get("profileImageUri") != null) {
                         Glide.with(getApplication())
                                 .load(Uri.parse(map.get("profileImageUri").toString()))
                                 .into(imageDriverPic);
+                    }
+
+                    int ratingSum = 0;
+                    int ratingTotal = 0;
+                    float ratingAvg = 0;
+                    for (DataSnapshot child : dataSnapshot.child("rating").getChildren()){
+                        ratingSum = ratingSum + Integer.valueOf(child.getValue().toString());
+                        ratingTotal++;
+                    }
+                    if(ratingTotal != 0){
+                        ratingAvg = ratingSum/ratingTotal;
+                        mRatingBar.setRating(ratingAvg);
                     }
 
                     driversDetailsLayout.setVisibility(View.VISIBLE);
@@ -475,6 +466,56 @@ public class CustomerMapActivity extends FragmentActivity
         });
     }
 
+    private DatabaseReference driveHasEndedRef;
+    private ValueEventListener driveHasEndedRefListener;
+    private void getHasRideEnded() {
+        driveHasEndedRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest").child("customerRideId");
+        Log.d("drivers logic", "customers id work? " + 123);
+        driveHasEndedRefListener = driveHasEndedRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()){
+
+
+                } else {
+                    endRide();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void endRide(){
+        isDriverFound = false;
+        isRequested = false;
+        driversDetailsLayout.setVisibility(View.GONE);
+        geoQuery.removeAllListeners();
+        driversLocationRef.removeEventListener(driverLocationRefListener);
+        driveHasEndedRef.removeEventListener(driveHasEndedRefListener);
+
+        if (driversID != null){
+            DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
+
+            customerRef.removeValue();
+            driversID = null;
+            Log.d("RemoveValue", "buttonRequestOrCancel: remove value from customers request");
+        }
+        if (pickupMarker != null){
+            pickupMarker.remove();
+        }
+
+        searchRadius = 1;
+        String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
+        GeoFire geoFire = new GeoFire(dbRef);
+        geoFire.removeLocation(userID);
+        mPickUpButton.setText("Ca");
+    }
+
     public void openProfile(View view) {
         Intent customerProfileIntent = new Intent(this, ProfileActivity.class);
         customerProfileIntent.putExtra("isDriver", false);
@@ -482,5 +523,11 @@ public class CustomerMapActivity extends FragmentActivity
 
     }
 
+    public void openHistory(View view) {
+        Intent historyIntent = new Intent(this, HistoryActivity.class);
+        historyIntent.putExtra("customerOrDriver", "Customers");
+        startActivity(historyIntent);
+
+    }
 
 }
