@@ -21,9 +21,9 @@
         android:roundIcon="@mipmap/ic_taxi_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".HistorySingleActivity"></activity>
-        <activity android:name=".HistoryActivity" />
-        <activity android:name=".ProfileActivity" />
+        <activity android:name=".HistorySingleActivity" android:launchMode="singleTask"></activity>
+        <activity android:name=".HistoryActivity" android:launchMode="singleTask"/>
+        <activity android:name=".ProfileActivity" android:launchMode="singleTask" android:screenOrientation="portrait"/>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -38,12 +38,12 @@
 
         <activity
             android:name=".CustomerMapActivity"
-            android:label="@string/title_activity_customer_map" />
+            android:label="@string/title_activity_customer_map" android:launchMode="singleTask" android:screenOrientation="portrait"/>
         <activity
             android:name=".DriversMapActivity"
-            android:label="@string/title_activity_drivers_map" />
-        <activity android:name=".LogInActivity" />
-        <activity android:name=".MainActivity">
+            android:label="@string/title_activity_drivers_map"  android:launchMode="singleTask" android:screenOrientation="portrait"/>
+        <activity android:name=".LogInActivity"  android:launchMode="singleTask" android:screenOrientation="portrait"/>
+        <activity android:name=".MainActivity" android:launchMode="singleTask" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

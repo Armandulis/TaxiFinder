@@ -38,22 +38,18 @@ import java.util.Map;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    EditText metName, metPhone, metCar;
+    // UI
+    private EditText metName, metPhone, metCar;
     private ImageView mImageProfilePic;
-
-    private FirebaseAuth mAuth;
-    private DatabaseReference mCustomersDatabase;
-
-    private String name;
-    private String phone;
-    private String profileImageUri;
-
-    private Uri resultUri;
-
-    private String userID;
     private RadioGroup radioGroupServiceType;
 
+    // Variables
+    private FirebaseAuth mAuth;
+    private DatabaseReference mCustomersDatabase;
+    private String name, phone, profileImageUri, userID;
+    private Uri resultUri;
     private boolean isDriver;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,12 +79,9 @@ public class ProfileActivity extends AppCompatActivity {
         } else {
             mCustomersDatabase = FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(userID);
             metCar.setVisibility(View.GONE);
+            radioGroupServiceType.setVisibility(View.GONE);
         }
-
-
         setUpCustomersData();
-
-
     }
 
     public void btnSave(View view) {
@@ -96,7 +89,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void saveUsersData() {
-
         Map userInfo = new HashMap();
         userInfo.put("name", metName.getText().toString());
         userInfo.put("phone", metPhone.getText().toString());

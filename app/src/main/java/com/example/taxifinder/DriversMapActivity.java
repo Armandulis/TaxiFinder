@@ -62,22 +62,29 @@ import java.util.Map;
 public class DriversMapActivity extends FragmentActivity
         implements OnMapReadyCallback, RoutingListener {
 
+    // Maps
     private GoogleMap mMap;
 
-    Location mLastLocation;
+    // Location
+    private Location mLastLocation;
     private LocationRequest mLocationRequest;
-
     private FusedLocationProviderClient mFusedLocationProvider;
-
-    private String customersID = "", destination;
     private LatLng destinationLatLng, pickupLatLng;
-    private int status = 0;
-    private boolean isLoggingOut = false;
-
+    private Marker pickupMarker;
+    // UI
     private LinearLayout customersDetailsLayout;
     private TextView textCustomerDetailsName, textCustomerDetailsPhone,textRideStatus, textCustomerDetailsDestination;
     private ImageView imageCustomerssPic;
 
+    // Variables
+    private String customersID = "", destination, driversID;
+    private int status = 0;
+    private boolean isLoggingOut = false;
+
+
+
+
+    // Routing
     private List<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.colorPrimaryDark,R.color.colorAccent,R.color.design_default_color_primary,R.color.primary_dark_material_light};
 
@@ -85,9 +92,10 @@ public class DriversMapActivity extends FragmentActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_drivers_map);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
+
+        // setting up values
         textCustomerDetailsName = findViewById(R.id.tvCustomerDetailsName);
         textCustomerDetailsPhone = findViewById(R.id.tvCustomerDetailsPhone);
         textCustomerDetailsDestination = findViewById(R.id.tvCustomerDetailsDestination);
@@ -95,29 +103,28 @@ public class DriversMapActivity extends FragmentActivity
         imageCustomerssPic = findViewById(R.id.imageCustomerPicDetails);
         textRideStatus = findViewById(R.id.rideStatus);
 
-
-        mFusedLocationProvider = LocationServices.getFusedLocationProviderClient(this);
-
         polylines = new ArrayList<>();
+
+        driversID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+       // setting up map and requesting location
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, ValuesHelper.PERMISSION_REQUEST_CODE);
+        mFusedLocationProvider = LocationServices.getFusedLocationProviderClient(this);
+        mapFragment.getMapAsync(this);
 
         getAssignedCustomer();
-        Log.d("drivers logic", "customers id work? ples before " + 9874613);
     }
 
     private void getAssignedCustomer() {
-        String driversID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        //checking if there are any changes inside drivers customer request
         DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest").child("customerRideId");
-
         customerRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
-                    // lets Driver know if there is someone to pick up
+                    // if there is, we get following information
                     status = 1;
                     customersID = dataSnapshot.getValue().toString();
                     getAssignedCustomerPickUpLocation();
@@ -138,15 +145,13 @@ public class DriversMapActivity extends FragmentActivity
     }
 
     private void getAssignedCustomerDestination() {
-        String driversID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
-
         customerRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
                     Map<String, Object> map = (Map<String, Object>) dataSnapshot.getValue();
-                    // lets Driver know if there is someone to pick up
+                    // getting and setting up customer details
                     if(map.get("destination")!=null){
                         destination = map.get("destination").toString();
                         textCustomerDetailsDestination.setText("Destination " + destination);
@@ -155,6 +160,7 @@ public class DriversMapActivity extends FragmentActivity
                         textCustomerDetailsDestination.setText("Destination: --");
                     }
 
+                    //setting up destination, is 0.0 if customer had an error picking destination
                     Double destinationLat = 0.0;
                     Double destinationLng = 0.0;
                     if(map.get("destinationLat") != null){
@@ -188,12 +194,12 @@ public class DriversMapActivity extends FragmentActivity
                         if (map.get("phone") != null) {
                             textCustomerDetailsPhone.setText( map.get("phone").toString());
                         }
+                        // glide is a library used to insert images into Imageview using Url/links
                         if (map.get("profileImageUri") != null) {
                             Glide.with(getApplication())
                                     .load(Uri.parse(map.get("profileImageUri").toString()))
                                     .into(imageCustomerssPic);
                         }
-
 
                         customersDetailsLayout.setVisibility(View.VISIBLE);
                     }
@@ -205,20 +211,16 @@ public class DriversMapActivity extends FragmentActivity
                 }
             });
     }
-
-    Marker pickupMarker;
     private  DatabaseReference customerPickUpLocationRef;
     private ValueEventListener  customerPickUpLocationRefListener;
 
     private void getAssignedCustomerPickUpLocation() {
+        // l is geofire way of setting up lat and lng
         customerPickUpLocationRef = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customersID).child("l");
-
         customerPickUpLocationRefListener = customerPickUpLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists() && !customersID.equals("")){
-                    // geetin pickup Location
-                    // gets customer id and the marker where to pick him up
                    List<Object> map =(List<Object>) dataSnapshot.getValue();
                     double locationLat = 0;
                     double locationLng = 0;
@@ -229,22 +231,12 @@ public class DriversMapActivity extends FragmentActivity
                     if (map.get(0) != null){
                         locationLng = Double.parseDouble(map.get(1).toString());
                     }
-
+                    // Letting driver know where to pick up customer
                     pickupLatLng  = new LatLng(locationLat, locationLng);
 
                     pickupMarker = mMap.addMarker(new MarkerOptions().position(pickupLatLng).title("Pick up Location"));
-
-
-
                     getRouteToCustomer(pickupLatLng);
-
-                  //  DatabaseReference deleteRequest = FirebaseDatabase.getInstance().getReference().child("customerRequest").child(customersID);
-                   // deleteRequest.removeValue();
-
-                }// else {
-                 //   DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(customersID).child("customerRequest");
-                 //   driverRef.removeValue();
-               // }
+                }
             }
 
             @Override
@@ -257,7 +249,7 @@ public class DriversMapActivity extends FragmentActivity
         Routing routing = new Routing.Builder()
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
-                .key("AIzaSyDb3jkSprTI-b0DLIu68F5XLuxPpNI3YY4")
+                .key(ValuesHelper.API_KEY)
                 .alternativeRoutes(true)
                 .waypoints(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), pickupLatLng)
                 .build();
@@ -278,7 +270,6 @@ public class DriversMapActivity extends FragmentActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(4000);
         mLocationRequest.setFastestInterval(2000);
@@ -314,8 +305,8 @@ public class DriversMapActivity extends FragmentActivity
             GeoFire geoFireAvaible = new GeoFire(dbRefAvaibleDrivers);
             GeoFire geoFireTaken = new GeoFire(dbRefDriversTaken);
 
-            //Checking if driver is working
-
+            //Checking if driver is active on app
+            // using geo fire to set up drivers information
             if (customersID.equals("")){
                 geoFireTaken.removeLocation(userID);
                 geoFireAvaible.setLocation(userID, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
@@ -323,8 +314,6 @@ public class DriversMapActivity extends FragmentActivity
                 geoFireAvaible.removeLocation(userID);
                 geoFireTaken.setLocation(userID, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
             }
-
-
     }
     };
 
@@ -334,7 +323,6 @@ public class DriversMapActivity extends FragmentActivity
         if (requestCode == ValuesHelper.PERMISSION_REQUEST_CODE){
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-
                     mFusedLocationProvider.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
                     mMap.setMyLocationEnabled(true);
                 }
@@ -356,19 +344,16 @@ public class DriversMapActivity extends FragmentActivity
     private void disconnectDriver(){
         String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("driversAvailable");
-
         GeoFire geoFire = new GeoFire(dbRef);
         geoFire.removeLocation(userID);
     }
     public void tryLogOut(View view) {
-            isLoggingOut = true;
+        isLoggingOut = true;
+        disconnectDriver();
+        mFusedLocationProvider.removeLocationUpdates(mLocationCallback);
 
-
-          mFusedLocationProvider.removeLocationUpdates(mLocationCallback);
-            disconnectDriver();
         if (customerPickUpLocationRefListener != null){
             customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
-
         }
             FirebaseAuth.getInstance().signOut();
 
@@ -387,9 +372,8 @@ public class DriversMapActivity extends FragmentActivity
     public void onRoutingFailure(RouteException e) {
         if (e != null) {
             Toast.makeText(this, "Error: " + e, Toast.LENGTH_SHORT).show();
-            Log.d("errorRoute", "onRoutingFailure: " + e);
         }
-        else   Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+        else Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -397,6 +381,7 @@ public class DriversMapActivity extends FragmentActivity
 
     }
 
+    // Functions from library Google-Directions-Android
     @Override
     public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteID) {
         if(polylines.size()>0) {
@@ -409,7 +394,6 @@ public class DriversMapActivity extends FragmentActivity
 
             //In case of more than 5 alternative routes
             int colorIndex = i % COLORS.length;
-
             PolylineOptions polyOptions = new PolylineOptions();
             polyOptions.color(getResources().getColor(COLORS[colorIndex]));
             polyOptions.width(10 + i * 3);
@@ -421,6 +405,7 @@ public class DriversMapActivity extends FragmentActivity
         }
     }
 
+    // switching between 'pickUpCustomer' and 'RideCompleted'
     public void switchStatus(View view){
         switch(status) {
             case 1:
@@ -440,22 +425,21 @@ public class DriversMapActivity extends FragmentActivity
 
     private void endRide(){
         textRideStatus.setText("customer picked up");
+        customersDetailsLayout.setVisibility(View.GONE);
+
         deletePolylines();
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("customerRequest");
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(driversID).child("customerRequest");
         driverRef.removeValue();
-
-        if (customerPickUpLocationRefListener != null){
-            customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
-        }
 
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference("customerRequest");
         GeoFire geoFire = new GeoFire(dbRef);
         geoFire.removeLocation(customersID);
-        customersID = "";
 
-        customersDetailsLayout.setVisibility(View.GONE);
+        if (customerPickUpLocationRefListener != null){
+            customerPickUpLocationRef.removeEventListener(customerPickUpLocationRefListener);
+        }
+        customersID = "";
 
         if (pickupMarker != null){
             pickupMarker.remove();
